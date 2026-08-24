@@ -1,0 +1,125 @@
+{
+  "version": "2026.1",
+  "dixon_coles_rho": -0.048,
+  "leagues": {
+    "Premier League": {
+      "home_advantage": 1.28,
+      "league_avg_goals": 2.82,
+      "teams": {
+        "Arsenal": { "elo": 1845, "attack": 1.48, "defense": 0.72 },
+        "Aston Villa": { "elo": 1710, "attack": 1.31, "defense": 0.94 },
+        "Bournemouth": { "elo": 1560, "attack": 1.08, "defense": 1.15 },
+        "Brentford": { "elo": 1580, "attack": 1.12, "defense": 1.10 },
+        "Brighton": { "elo": 1635, "attack": 1.22, "defense": 1.04 },
+        "Chelsea": { "elo": 1735, "attack": 1.38, "defense": 0.90 },
+        "Crystal Palace": { "elo": 1545, "attack": 0.96, "defense": 1.08 },
+        "Everton": { "elo": 1520, "attack": 0.91, "defense": 1.09 },
+        "Fulham": { "elo": 1565, "attack": 1.05, "defense": 1.07 },
+        "Ipswich": { "elo": 1450, "attack": 0.88, "defense": 1.34 },
+        "Leicester": { "elo": 1505, "attack": 0.98, "defense": 1.26 },
+        "Liverpool": { "elo": 1850, "attack": 1.54, "defense": 0.69 },
+        "Man City": { "elo": 1885, "attack": 1.62, "defense": 0.66 },
+        "Man United": { "elo": 1680, "attack": 1.21, "defense": 1.02 },
+        "Newcastle": { "elo": 1675, "attack": 1.29, "defense": 0.97 },
+        "Nott'm Forest": { "elo": 1530, "attack": 0.94, "defense": 1.12 },
+        "Southampton": { "elo": 1440, "attack": 0.84, "defense": 1.38 },
+        "Tottenham": { "elo": 1705, "attack": 1.40, "defense": 1.06 },
+        "West Ham": { "elo": 1595, "attack": 1.14, "defense": 1.16 },
+        "Wolves": { "elo": 1515, "attack": 0.95, "defense": 1.21 }
+      }
+    },
+    "Championship": {
+      "home_advantage": 1.24,
+      "league_avg_goals": 2.58,
+      "teams": {
+        "Blackburn": { "elo": 1440, "attack": 1.04, "defense": 1.12 },
+        "Bristol City": { "elo": 1435, "attack": 0.98, "defense": 1.05 },
+        "Burnley": { "elo": 1535, "attack": 1.22, "defense": 0.84 },
+        "Coventry": { "elo": 1455, "attack": 1.08, "defense": 1.06 },
+        "Leeds": { "elo": 1565, "attack": 1.28, "defense": 0.86 },
+        "Middlesbrough": { "elo": 1475, "attack": 1.10, "defense": 1.01 },
+        "Millwall": { "elo": 1430, "attack": 0.92, "defense": 0.96 },
+        "Norwich": { "elo": 1460, "attack": 1.12, "defense": 1.09 },
+        "Sheffield Utd": { "elo": 1525, "attack": 1.18, "defense": 0.89 },
+        "Sunderland": { "elo": 1495, "attack": 1.10, "defense": 0.97 },
+        "Watford": { "elo": 1465, "attack": 1.06, "defense": 1.04 },
+        "West Brom": { "elo": 1485, "attack": 1.07, "defense": 0.94 }
+      }
+    },
+    "La Liga": {
+      "home_advantage": 1.26,
+      "league_avg_goals": 2.62,
+      "teams": {
+        "Athletic Bilbao": { "elo": 1705, "attack": 1.24, "defense": 0.84 },
+        "Atletico Madrid": { "elo": 1780, "attack": 1.36, "defense": 0.74 },
+        "Barcelona": { "elo": 1870, "attack": 1.64, "defense": 0.67 },
+        "Celta Vigo": { "elo": 1570, "attack": 1.04, "defense": 1.14 },
+        "Getafe": { "elo": 1540, "attack": 0.88, "defense": 0.96 },
+        "Girona": { "elo": 1655, "attack": 1.28, "defense": 1.06 },
+        "Mallorca": { "elo": 1555, "attack": 0.92, "defense": 0.98 },
+        "Osasuna": { "elo": 1580, "attack": 1.02, "defense": 1.05 },
+        "Ray Vallecano": { "elo": 1550, "attack": 0.94, "defense": 1.08 },
+        "Real Betis": { "elo": 1640, "attack": 1.14, "defense": 0.97 },
+        "Real Madrid": { "elo": 1895, "attack": 1.66, "defense": 0.64 },
+        "Real Sociedad": { "elo": 1675, "attack": 1.18, "defense": 0.86 },
+        "Sevilla": { "elo": 1605, "attack": 1.08, "defense": 1.08 },
+        "Valencia": { "elo": 1575, "attack": 1.01, "defense": 1.10 },
+        "Villarreal": { "elo": 1665, "attack": 1.30, "defense": 1.04 }
+      }
+    },
+    "Bundesliga": {
+      "home_advantage": 1.31,
+      "league_avg_goals": 3.16,
+      "teams": {
+        "Bayer Leverkusen": { "elo": 1825, "attack": 1.58, "defense": 0.76 },
+        "Bayern Munich": { "elo": 1880, "attack": 1.72, "defense": 0.70 },
+        "Borussia Dortmund": { "elo": 1750, "attack": 1.48, "defense": 0.90 },
+        "Eintracht Frankfurt": { "elo": 1655, "attack": 1.30, "defense": 1.04 },
+        "Freiburg": { "elo": 1605, "attack": 1.14, "defense": 1.06 },
+        "Heidenheim": { "elo": 1540, "attack": 1.02, "defense": 1.18 },
+        "Hoffenheim": { "elo": 1575, "attack": 1.20, "defense": 1.26 },
+        "Mainz": { "elo": 1560, "attack": 1.04, "defense": 1.12 },
+        "Monchengladbach": { "elo": 1570, "attack": 1.18, "defense": 1.20 },
+        "RB Leipzig": { "elo": 1745, "attack": 1.42, "defense": 0.86 },
+        "Stuttgart": { "elo": 1675, "attack": 1.34, "defense": 0.96 },
+        "Union Berlin": { "elo": 1565, "attack": 0.96, "defense": 1.04 },
+        "Werder Bremen": { "elo": 1555, "attack": 1.08, "defense": 1.16 },
+        "Wolfsburg": { "elo": 1585, "attack": 1.12, "defense": 1.14 }
+      }
+    },
+    "Serie A": {
+      "home_advantage": 1.25,
+      "league_avg_goals": 2.60,
+      "teams": {
+        "AC Milan": { "elo": 1750, "attack": 1.40, "defense": 0.86 },
+        "Atalanta": { "elo": 1740, "attack": 1.50, "defense": 0.92 },
+        "Bologna": { "elo": 1645, "attack": 1.16, "defense": 0.90 },
+        "Fiorentina": { "elo": 1650, "attack": 1.20, "defense": 0.96 },
+        "Inter": { "elo": 1855, "attack": 1.58, "defense": 0.66 },
+        "Juventus": { "elo": 1765, "attack": 1.30, "defense": 0.70 },
+        "Lazio": { "elo": 1670, "attack": 1.22, "defense": 0.96 },
+        "Napoli": { "elo": 1735, "attack": 1.38, "defense": 0.80 },
+        "Roma": { "elo": 1680, "attack": 1.24, "defense": 0.94 },
+        "Torino": { "elo": 1575, "attack": 0.96, "defense": 1.00 },
+        "Udinese": { "elo": 1545, "attack": 0.98, "defense": 1.12 }
+      }
+    },
+    "Ligue 1": {
+      "home_advantage": 1.27,
+      "league_avg_goals": 2.74,
+      "teams": {
+        "Brest": { "elo": 1610, "attack": 1.10, "defense": 0.92 },
+        "Lens": { "elo": 1650, "attack": 1.20, "defense": 0.88 },
+        "Lille": { "elo": 1690, "attack": 1.28, "defense": 0.84 },
+        "Lyon": { "elo": 1670, "attack": 1.32, "defense": 1.02 },
+        "Marseille": { "elo": 1715, "attack": 1.38, "defense": 0.94 },
+        "Monaco": { "elo": 1725, "attack": 1.42, "defense": 0.90 },
+        "Nice": { "elo": 1640, "attack": 1.14, "defense": 0.86 },
+        "Paris SG": { "elo": 1860, "attack": 1.68, "defense": 0.68 },
+        "Rennes": { "elo": 1615, "attack": 1.20, "defense": 1.06 },
+        "Strasbourg": { "elo": 1550, "attack": 1.06, "defense": 1.16 },
+        "Toulouse": { "elo": 1540, "attack": 1.04, "defense": 1.14 }
+      }
+    }
+  }
+}
