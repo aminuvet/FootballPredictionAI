@@ -21,13 +21,12 @@ def fetch_api(endpoint):
     req = urllib.request.Request(url, headers={"X-Auth-Token": API_KEY})
     try:
         with urllib.request.urlopen(req, timeout=12) as response:
-            return json.loads(response.read().decode())
+            return json.loads(response.read().decode("utf-8", errors="ignore"), strict=False)
     except Exception as e:
         print(f"Fetch failed for {endpoint}: {e}")
         return None
 
 def calculate_elo_update(r_home, r_away, score_h, score_a, k=24.0, home_adv=65.0):
-    # Adjusted rating with home field advantage
     dr = (r_home + home_adv) - r_away
     e_home = 1.0 / (1.0 + math.pow(10.0, -dr / 400.0))
     e_away = 1.0 - e_home
@@ -39,7 +38,6 @@ def calculate_elo_update(r_home, r_away, score_h, score_a, k=24.0, home_adv=65.0
     else:
         s_home, s_away = 0.0, 1.0
 
-    # Margin of victory multiplier
     goal_diff = abs(score_h - score_a)
     mov = 1.0 if goal_diff <= 1 else 1.5 if goal_diff == 2 else (11.0 + goal_diff) / 8.0
 
@@ -50,11 +48,13 @@ def calculate_elo_update(r_home, r_away, score_h, score_a, k=24.0, home_adv=65.0
 def run():
     print("Starting Football Prediction Model update pipeline...")
 
-    # Load baseline model parameters
     base_file = "app/src/main/assets/model_parameters.json"
     if os.path.exists(base_file):
-        with open(base_file, "r") as f:
-            data = json.load(f)
+        with open(base_file, "r", encoding="utf-8", errors="ignore") as f:
+            raw_content = f.read()
+            # Clean non-printable control characters
+            clean_content = "".join(ch for ch in raw_content if ch >= " " or ch in "\n\r\t")
+            data = json.loads(clean_content, strict=False)
     else:
         print("Base parameters file missing.")
         return
@@ -67,7 +67,6 @@ def run():
     if API_KEY:
         print("API Key detected. Fetching live fixtures and results...")
         for comp in COMPETITIONS:
-            # Fetch matches
             res = fetch_api(f"competitions/{comp['code']}/matches?status=SCHEDULED,IN_PLAY,FINISHED")
             if not res or "matches" not in res:
                 continue
@@ -75,8 +74,6 @@ def run():
             league_key = comp["name"]
             if league_key not in data["leagues"]:
                 continue
-
-            teams = data["leagues"][league_key]["teams"]
 
             for m in res["matches"]:
                 status = m.get("status")
@@ -104,11 +101,11 @@ def run():
 
     os.makedirs("pipeline/data", exist_ok=True)
     out_file = "pipeline/data/model_parameters.json"
-    with open(out_file, "w") as f:
+    with open(out_file, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
     print(f"Pipeline successfully completed. Output written to {out_file}")
 
 if __name__ == "__main__":
     run()
-  
+    
