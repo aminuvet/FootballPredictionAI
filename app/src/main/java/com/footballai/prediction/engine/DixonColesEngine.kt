@@ -1,9 +1,6 @@
 package com.footballai.prediction.engine
 
-import com.footballai.prediction.model.MatchPrediction
-import com.footballai.prediction.model.OverUnder
-import com.footballai.prediction.model.ScoreProbability
-import com.footballai.prediction.model.TeamStats
+import com.footballai.prediction.model.*
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.max
@@ -19,12 +16,12 @@ object DixonColesEngine {
         return result
     }
 
-    private fun poissonProb(k: Int, lambda: Double): Double {
+    fun poissonProb(k: Int, lambda: Double): Double {
         if (lambda <= 0.0) return if (k == 0) 1.0 else 0.0
         return (lambda.pow(k) * exp(-lambda)) / factorial(k)
     }
 
-    private fun tau(x: Int, y: Int, lambda: Double, mu: Double, rho: Double): Double {
+    fun tau(x: Int, y: Int, lambda: Double, mu: Double, rho: Double): Double {
         return when {
             x == 0 && y == 0 -> 1.0 - (lambda * mu * rho)
             x == 0 && y == 1 -> 1.0 + (lambda * rho)
@@ -39,10 +36,32 @@ object DixonColesEngine {
         away: TeamStats,
         leagueName: String,
         homeAdvantage: Double,
-        rho: Double
+        rho: Double,
+        generatedAt: String = "Live / Local Cache",
+        dataSource: String = "Football-Data.org Cloud Pipeline"
     ): MatchPrediction {
-        val lambda = max(home.attack * away.defense * homeAdvantage, 0.05)
-        val mu = max(away.attack * home.defense, 0.05)
+        // Elo strength differential modifier (logistic sigmoid scaling)
+        val eloDiff = (home.elo + 65.0) - away.elo
+        val eloMultiplierHome = 1.0 / (1.0 + exp(-eloDiff / 400.0)) * 2.0
+        val eloMultiplierAway = 2.0 - eloMultiplierHome
+
+        // Recent rolling form adjustment factor
+        val formFactorHome = 1.0 + ((home.formPointsLast5 - 7.5) * 0.015)
+        val formFactorAway = 1.0 + ((away.formPointsLast5 - 7.5) * 0.015)
+
+        // Rest days fatigue adjustment (slight penalty if <= 3 days rest)
+        val restFactorHome = if (home.restDays <= 3) 0.95 else 1.0
+        val restFactorAway = if (away.restDays <= 3) 0.95 else 1.0
+
+        // Dynamic expected goals (lambda and mu)
+        val lambda = max(
+            home.attack * away.defense * homeAdvantage * (eloMultiplierHome * 0.5 + 0.5) * formFactorHome * restFactorHome,
+            0.05
+        )
+        val mu = max(
+            away.attack * home.defense * (eloMultiplierAway * 0.5 + 0.5) * formFactorAway * restFactorAway,
+            0.05
+        )
 
         val scoreMatrix = Array(MAX_SCORE + 1) { DoubleArray(MAX_SCORE + 1) }
         var totalProbabilityMass = 0.0
@@ -56,11 +75,109 @@ object DixonColesEngine {
             }
         }
 
+        // Probability mass normalization
         for (x in 0..MAX_SCORE) {
             for (y in 0..MAX_SCORE) {
                 scoreMatrix[x][y] /= totalProbabilityMass
             }
         }
+
+        var pHomeWin = 0.0
+        var pDraw = 0.0
+        var pAwayWin = 0.0
+        var pBttsYes = 0.0
+        var pOver15 = 0.0
+        var pOver25 = 0.0
+        var pOver35 = 0.0
+        var pHomeCleanSheet = 0.0
+        var pAwayCleanSheet = 0.0
+
+        val scoreList = mutableListOf<ScoreProbability>()
+
+        for (x in 0..MAX_SCORE) {
+            for (y in 0..MAX_SCORE) {
+                val p = scoreMatrix[x][y]
+                scoreList.add(ScoreProbability(x, y, p))
+
+                when {
+                    x > y -> pHomeWin += p
+                    x == y -> pDraw += p
+                    else -> pAwayWin += p
+                }
+
+                if (x > 0 && y > 0) pBttsYes += p
+                if (y == 0) pHomeCleanSheet += p
+                if (x == 0) pAwayCleanSheet += p
+
+                val totalG = x + y
+                if (totalG > 1.5) pOver15 += p
+                if (totalG > 2.5) pOver25 += p
+                if (totalG > 3.5) pOver35 += p
+            }
+        }
+
+        val top5Scores = scoreList.sortedByDescending { it.probability }.take(5)
+
+        val winProbSeparation = abs(pHomeWin - pAwayWin)
+        val (confidenceLabel, confidenceGrade) = when {
+            winProbSeparation >= 0.35 || abs(eloDiff) >= 170.0 -> "HIGH" to "A (Strong Signal)"
+            winProbSeparation >= 0.16 || abs(eloDiff) >= 75.0 -> "MEDIUM" to "B (Moderate Edge)"
+            else -> "LOW" to "C (High Variance)"
+        }
+
+        val factors = mutableListOf<String>()
+        val netElo = (home.elo - away.elo).toInt()
+        if (netElo > 60) {
+            factors.add("Elo index advantage (+${netElo} pts) favors ${home.name}.")
+        } else if (netElo < -60) {
+            factors.add("Away team holds baseline Elo superiority (+${abs(netElo)} pts).")
+        } else {
+            factors.add("Balanced Elo ratings (within ${abs(netElo)} pts difference).")
+        }
+
+        if (home.formPointsLast5 >= 10) {
+            factors.add("${home.name} in strong recent form (${home.formPointsLast5}/15 pts in last 5).")
+        }
+        if (away.formPointsLast5 >= 10) {
+            factors.add("${away.name} in strong recent form (${away.formPointsLast5}/15 pts in last 5).")
+        }
+
+        if (lambda + mu >= 2.9) {
+            factors.add("High scoring environment projected (${String.format("%.2f", lambda + mu)} model xG).")
+        } else if (lambda + mu <= 2.25) {
+            factors.add("Low scoring/defensive encounter favored (under 2.5 line).")
+        }
+
+        factors.add("Home advantage coefficient (+${((homeAdvantage - 1.0) * 100).toInt()}%) applied.")
+
+        return MatchPrediction(
+            homeTeam = home.name,
+            awayTeam = away.name,
+            leagueName = leagueName,
+            homeWinProb = pHomeWin * 100.0,
+            drawProb = pDraw * 100.0,
+            awayWinProb = pAwayWin * 100.0,
+            expHomeGoals = lambda,
+            expAwayGoals = mu,
+            expTotalGoals = lambda + mu,
+            topScores = top5Scores,
+            overUnder15 = OverUnder(1.5, pOver15 * 100.0, (1.0 - pOver15) * 100.0),
+            overUnder25 = OverUnder(2.5, pOver25 * 100.0, (1.0 - pOver25) * 100.0),
+            overUnder35 = OverUnder(3.5, pOver35 * 100.0, (1.0 - pOver35) * 100.0),
+            bttsYesProb = pBttsYes * 100.0,
+            bttsNoProb = (1.0 - pBttsYes) * 100.0,
+            cleanSheets = CleanSheetProbabilities(
+                homeCleanSheetProb = pHomeCleanSheet * 100.0,
+                awayCleanSheetProb = pAwayCleanSheet * 100.0
+            ),
+            confidence = confidenceLabel,
+            confidenceGrade = confidenceGrade,
+            keyFactors = factors.take(4),
+            dataFreshness = generatedAt,
+            dataSource = dataSource
+        )
+    }
+}
 
         var pHomeWin = 0.0
         var pDraw = 0.0
