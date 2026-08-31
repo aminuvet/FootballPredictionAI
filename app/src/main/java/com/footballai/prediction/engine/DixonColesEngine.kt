@@ -38,22 +38,18 @@ object DixonColesEngine {
         homeAdvantage: Double,
         rho: Double,
         generatedAt: String = "Live / Local Cache",
-        dataSource: String = "Football-Data.org Cloud Pipeline"
+        dataSource: String = "Football-Data.org Cloud Engine"
     ): MatchPrediction {
-        // Elo strength differential modifier (logistic sigmoid scaling)
         val eloDiff = (home.elo + 65.0) - away.elo
         val eloMultiplierHome = 1.0 / (1.0 + exp(-eloDiff / 400.0)) * 2.0
         val eloMultiplierAway = 2.0 - eloMultiplierHome
 
-        // Recent rolling form adjustment factor
         val formFactorHome = 1.0 + ((home.formPointsLast5 - 7.5) * 0.015)
         val formFactorAway = 1.0 + ((away.formPointsLast5 - 7.5) * 0.015)
 
-        // Rest days fatigue adjustment (slight penalty if <= 3 days rest)
         val restFactorHome = if (home.restDays <= 3) 0.95 else 1.0
         val restFactorAway = if (away.restDays <= 3) 0.95 else 1.0
 
-        // Dynamic expected goals (lambda and mu)
         val lambda = max(
             home.attack * away.defense * homeAdvantage * (eloMultiplierHome * 0.5 + 0.5) * formFactorHome * restFactorHome,
             0.05
@@ -75,7 +71,6 @@ object DixonColesEngine {
             }
         }
 
-        // Probability mass normalization
         for (x in 0..MAX_SCORE) {
             for (y in 0..MAX_SCORE) {
                 scoreMatrix[x][y] /= totalProbabilityMass
@@ -175,90 +170,6 @@ object DixonColesEngine {
             keyFactors = factors.take(4),
             dataFreshness = generatedAt,
             dataSource = dataSource
-        )
-    }
-}
-
-        var pHomeWin = 0.0
-        var pDraw = 0.0
-        var pAwayWin = 0.0
-        var pBttsYes = 0.0
-        var pOver15 = 0.0
-        var pOver25 = 0.0
-        var pOver35 = 0.0
-
-        val scoreList = mutableListOf<ScoreProbability>()
-
-        for (x in 0..MAX_SCORE) {
-            for (y in 0..MAX_SCORE) {
-                val p = scoreMatrix[x][y]
-                scoreList.add(ScoreProbability(x, y, p))
-
-                when {
-                    x > y -> pHomeWin += p
-                    x == y -> pDraw += p
-                    else -> pAwayWin += p
-                }
-
-                if (x > 0 && y > 0) pBttsYes += p
-                val totalG = x + y
-                if (totalG > 1.5) pOver15 += p
-                if (totalG > 2.5) pOver25 += p
-                if (totalG > 3.5) pOver35 += p
-            }
-        }
-
-        val top5Scores = scoreList.sortedByDescending { it.probability }.take(5)
-
-        val eloDiscrepancy = (home.elo + 65.0) - away.elo
-        val winProbSeparation = abs(pHomeWin - pAwayWin)
-        val confidence = when {
-            winProbSeparation >= 0.35 || abs(eloDiscrepancy) >= 170.0 -> "HIGH"
-            winProbSeparation >= 0.16 || abs(eloDiscrepancy) >= 75.0 -> "MEDIUM"
-            else -> "LOW"
-        }
-
-        val factors = mutableListOf<String>()
-        val eloDiff = (home.elo - away.elo).toInt()
-        if (eloDiff > 80) {
-            factors.add("Clear Elo strength index advantage (+${eloDiff} pts) for ${home.name}.")
-        } else if (eloDiff < -80) {
-            factors.add("Away team holds superior baseline Elo rating (+${abs(eloDiff)} pts).")
-        } else {
-            factors.add("Evenly balanced baseline Elo strength ratings (difference < 80 pts).")
-        }
-
-        if (home.attack >= 1.35) {
-            factors.add("${home.name} exhibits top-tier offensive output efficiency (${home.attack}x factor).")
-        }
-        if (away.defense >= 1.12) {
-            factors.add("${away.name} concedes higher defensive conversion opportunities (${away.defense}x factor).")
-        }
-        if (lambda + mu >= 2.9) {
-            factors.add("Elevated scoring environment projected (${String.format("%.2f", lambda + mu)} model xG).")
-        } else if (lambda + mu <= 2.25) {
-            factors.add("Tight defensive encounter favored under 2.5 goals line.")
-        }
-        factors.add("Home advantage coefficient (+${((homeAdvantage - 1.0) * 100).toInt()}%) factored into ${home.name}'s lambda.")
-
-        return MatchPrediction(
-            homeTeam = home.name,
-            awayTeam = away.name,
-            leagueName = leagueName,
-            homeWinProb = pHomeWin * 100.0,
-            drawProb = pDraw * 100.0,
-            awayWinProb = pAwayWin * 100.0,
-            expHomeGoals = lambda,
-            expAwayGoals = mu,
-            expTotalGoals = lambda + mu,
-            topScores = top5Scores,
-            overUnder15 = OverUnder(1.5, pOver15 * 100.0, (1.0 - pOver15) * 100.0),
-            overUnder25 = OverUnder(2.5, pOver25 * 100.0, (1.0 - pOver25) * 100.0),
-            overUnder35 = OverUnder(3.5, pOver35 * 100.0, (1.0 - pOver35) * 100.0),
-            bttsYesProb = pBttsYes * 100.0,
-            bttsNoProb = (1.0 - pBttsYes) * 100.0,
-            confidence = confidence,
-            keyFactors = factors.take(4)
         )
     }
 }
