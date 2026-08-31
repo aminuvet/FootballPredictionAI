@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.footballai.prediction"
-        minSdk = 31
+        minSdk = 26
         targetSdk = 35
         versionCode = 2
         versionName = "2.0.0"
