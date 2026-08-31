@@ -6,8 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -23,8 +21,17 @@ import com.footballai.prediction.data.PredictionRepository
 import com.footballai.prediction.model.Fixture
 import com.footballai.prediction.model.MatchPrediction
 import com.footballai.prediction.model.TeamStats
-import com.footballai.prediction.ui.theme.*
 import kotlinx.coroutines.launch
+
+private val GreenPrimary = Color(0xFF22C55E)
+private val BackgroundDark = Color(0xFF0F172A)
+private val SurfaceDark = Color(0xFF1E293B)
+private val SurfaceCard = Color(0xFF1E293B)
+private val TextSecondary = Color(0xFF94A3B8)
+private val BlueSecondary = Color(0xFF38BDF8)
+private val HighConfidenceColor = Color(0xFF22C55E)
+private val MedConfidenceColor = Color(0xFFF59E0B)
+private val LowConfidenceColor = Color(0xFFEF4444)
 
 class MainActivity : ComponentActivity() {
 
@@ -35,10 +42,16 @@ class MainActivity : ComponentActivity() {
         repository = PredictionRepository(applicationContext)
 
         setContent {
-            FootballPredictionAITheme {
+            MaterialTheme(
+                colorScheme = darkColorScheme(
+                    primary = GreenPrimary,
+                    background = BackgroundDark,
+                    surface = SurfaceDark
+                )
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = BackgroundDark
                 ) {
                     PredictionMainScreen(repository)
                 }
@@ -52,7 +65,6 @@ class MainActivity : ComponentActivity() {
 fun PredictionMainScreen(repository: PredictionRepository) {
     val coroutineScope = rememberCoroutineScope()
     var isSyncing by remember { mutableStateOf(false) }
-    var syncMessage by remember { mutableStateOf<String?>(null) }
 
     val leagues = remember { repository.getSupportedLeagues() }
     var selectedLeague by remember { mutableStateOf(leagues.firstOrNull() ?: "Premier League") }
@@ -61,7 +73,7 @@ fun PredictionMainScreen(repository: PredictionRepository) {
     var homeTeam by remember(selectedLeague) { mutableStateOf(teams.getOrNull(0)) }
     var awayTeam by remember(selectedLeague) { mutableStateOf(teams.getOrNull(1)) }
 
-    var selectedTab by remember { mutableStateOf(0) } // 0: Upcoming Fixtures, 1: Custom Matchup
+    var selectedTab by remember { mutableStateOf(0) }
     var predictionResult by remember { mutableStateOf<MatchPrediction?>(null) }
 
     var leagueDropdownExpanded by remember { mutableStateOf(false) }
@@ -71,12 +83,11 @@ fun PredictionMainScreen(repository: PredictionRepository) {
     val upcomingFixtures = remember(selectedLeague, isSyncing) {
         repository.getUpcomingFixtures(selectedLeague)
     }
-    val (freshnessDate, dataSourceName) = repository.getDataFreshness()
+    val (freshnessDate, _) = repository.getDataFreshness()
 
     LaunchedEffect(Unit) {
         isSyncing = true
-        val success = repository.syncRemoteParameters()
-        syncMessage = if (success) "Live Parameters Synced" else "Using Local Cached Parameters"
+        repository.syncRemoteParameters()
         isSyncing = false
     }
 
@@ -91,12 +102,14 @@ fun PredictionMainScreen(repository: PredictionRepository) {
             text = "⚽ FOOTBALL PREDICTION AI",
             fontSize = 20.sp,
             fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.primary,
+            color = GreenPrimary,
             modifier = Modifier.padding(top = 4.dp)
         )
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -113,12 +126,13 @@ fun PredictionMainScreen(repository: PredictionRepository) {
             )
         }
 
-        // Mode Switcher Tab
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = SurfaceDark,
             contentColor = GreenPrimary,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
         ) {
             Tab(
                 selected = selectedTab == 0,
@@ -137,7 +151,9 @@ fun PredictionMainScreen(repository: PredictionRepository) {
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = TextSecondary,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp)
         )
         ExposedDropdownMenuBox(
             expanded = leagueDropdownExpanded,
@@ -149,10 +165,12 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                 onValueChange = {},
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = leagueDropdownExpanded) },
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedBorderColor = GreenPrimary,
                     unfocusedContainerColor = SurfaceDark,
                     focusedContainerColor = SurfaceDark
                 )
@@ -179,14 +197,19 @@ fun PredictionMainScreen(repository: PredictionRepository) {
         if (selectedTab == 0) {
             if (upcomingFixtures.isEmpty()) {
                 Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
                     colors = CardDefaults.cardColors(containerColor = SurfaceCard),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("No live schedule fixtures found for $selectedLeague.", fontSize = 13.sp, color = TextSecondary)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("No upcoming fixtures cached for $selectedLeague.", fontSize = 13.sp, color = TextSecondary)
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text("Switch to 'Custom Match' tab above to predict any matchup.", fontSize = 12.sp, color = GreenPrimary)
+                        Text("Switch to 'Custom Match' to predict any matchup.", fontSize = 12.sp, color = GreenPrimary)
                     }
                 }
             } else {
@@ -195,7 +218,9 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextSecondary,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 6.dp)
                 )
                 upcomingFixtures.forEach { fixture ->
                     Card(
@@ -213,7 +238,9 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -221,7 +248,7 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                                 Text("${fixture.homeTeam} vs ${fixture.awayTeam}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                 Text("Date: ${fixture.utcDate.take(10)} | Status: ${fixture.status}", fontSize = 11.sp, color = TextSecondary)
                             }
-                            Text("TAP TO PREDICT", fontSize = 11.sp, color = GreenPrimary, fontWeight = FontWeight.Bold)
+                            Text("PREDICT", fontSize = 11.sp, color = GreenPrimary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -232,7 +259,9 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextSecondary,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp)
             )
             ExposedDropdownMenuBox(
                 expanded = homeDropdownExpanded,
@@ -244,10 +273,12 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = homeDropdownExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedBorderColor = GreenPrimary,
                         unfocusedContainerColor = SurfaceDark,
                         focusedContainerColor = SurfaceDark
                     )
@@ -276,7 +307,9 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextSecondary,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp)
             )
             ExposedDropdownMenuBox(
                 expanded = awayDropdownExpanded,
@@ -288,10 +321,12 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = awayDropdownExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedBorderColor = GreenPrimary,
                         unfocusedContainerColor = SurfaceDark,
                         focusedContainerColor = SurfaceDark
                     )
@@ -325,8 +360,10 @@ fun PredictionMainScreen(repository: PredictionRepository) {
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
@@ -376,7 +413,9 @@ fun PredictionOutputCard(res: MatchPrediction) {
                 color = TextSecondary
             )
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(horizontalAlignment = Alignment.Start) {
@@ -402,7 +441,9 @@ fun PredictionOutputCard(res: MatchPrediction) {
                 color = TextSecondary
             )
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("Home: ${String.format("%.2f", res.expHomeGoals)}", fontSize = 13.sp)
@@ -421,7 +462,9 @@ fun PredictionOutputCard(res: MatchPrediction) {
             Spacer(modifier = Modifier.height(6.dp))
             res.topScores.forEachIndexed { idx, score ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("${idx + 1}.   ${score.homeGoals} - ${score.awayGoals}", fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -451,4 +494,33 @@ fun PredictionOutputCard(res: MatchPrediction) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
-            ) 
+            ) {
+                Text("MODEL RELIABILITY", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                val (color, label) = when (res.confidence) {
+                    "HIGH" -> HighConfidenceColor to res.confidenceGrade
+                    "MEDIUM" -> MedConfidenceColor to res.confidenceGrade
+                    else -> LowConfidenceColor to res.confidenceGrade
+                }
+                Text(
+                    text = label,
+                    color = color,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 12.sp
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF334155))
+
+            Text(
+                text = "KEY PREDICTION DRIVERS",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextSecondary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            res.keyFactors.forEach { factor ->
+                Text("• $factor", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(vertical = 1.dp))
+            }
+        }
+    }
+}
