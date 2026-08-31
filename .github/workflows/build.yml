@@ -1,14 +1,36 @@
-name: Build Android APK
+name: Build Android APK and Data Pipeline
 
 on:
   push:
     branches: [ "main" ]
+  schedule:
+    - cron: '0 4 * * *' # Runs daily at 04:00 UTC
   workflow_dispatch:
 
 jobs:
-  build:
+  pipeline:
+    name: Run Prediction Data Pipeline
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Pipeline & Model Fitting
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: |
+          python pipeline/update_pipeline.py
+          python pipeline/backtest.py
+
+  build:
+    name: Compile Android APK
+    needs: pipeline
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -24,6 +46,9 @@ jobs:
         with:
           gradle-version: '8.10'
 
+      - name: Run Unit Tests
+        run: gradle test --stacktrace
+
       - name: Build APK
         run: gradle assembleDebug --stacktrace
 
@@ -32,5 +57,4 @@ jobs:
         with:
           name: FootballPredictionAI-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          
           
